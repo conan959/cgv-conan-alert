@@ -1,0 +1,60 @@
+name: CGV 코난 새 예매 회차 감시
+
+on:
+  schedule:
+    # UTC / KST 모두 매시 03,13,23,33,43,53분에 실행 요청
+    - cron: '3,13,23,33,43,53 * * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'test: 텔레그램 메시지만 테스트 / check: 실제 CGV 조회'
+        required: true
+        type: choice
+        default: test
+        options:
+          - test
+          - check
+
+permissions:
+  contents: write  # Allows state.json to be committed for deduplication
+
+concurrency:
+  group: cgv-conan-watcher
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check notification or CGV
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SELECTED_MODE: ${{ inputs.mode }}
+        run: |
+          if [ "$SELECTED_MODE" = "test" ]; then
+            python watcher.py --test
+          else
+            python watcher.py
+          fi
+      - name: Save notified sessions to repository
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update CGV Conan alert state [skip ci]"
+            git push
+          else
+            echo "No state changes"
+          fi
