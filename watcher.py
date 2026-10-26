@@ -21,7 +21,7 @@ from pathlib import Path
 BASE = "https://cgv.co.kr/api/v1/booking"
 STATE_FILE = Path(__file__).with_name("state.json")
 KST = timezone(timedelta(hours=9))
-THEATERS = {"0074": "왕십리", "0191": "홍대"}
+THEATERS = {"0013": "용산아이파크몰", "0191": "홍대"}
 CO_CD = "A420"
 DAYS_AHEAD = 30  # Future day limit; actual monitored dates are based on CGV's open-day list.
 MAX_DATES_PER_THEATER = 14  # Caps requests per run.
